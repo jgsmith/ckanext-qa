@@ -29,24 +29,88 @@ OPENNESS_SCORE_REASON = {
     5: 'fully Linked Open Data as appropriate',
 }
 
+ALLOWED_MIME_TYPES = {
+    'atom': [ 'application/atom+xml' ],
+    'rss': [ 'application/rss+xml' ],
+    'csv': [ 'text/csv' ],
+    'json': [ 'application/json' ],
+    'json-ld': [ 'application/json', 'application/ld+json' ],
+    'kml': [ 'application/vnd.google-earth.kml+xml' ],
+    'turtle': [ 'text/turtle', 'application/x-turtle' ],
+    'n-triples': [ 'text/plain'],
+    'n3': [ 'text/rdf+n3', 'text/plain', ],
+    'rdf+xml': [ 'application/rdf+xml' ],
+    'tsv': [ 'text/tab-separated-values' ],
+    'api/sparql': [ 'application/sparql-query' ],
+    'html': [ 'text/html', 'application/xhtml+xml' ],
+    'txt': [ 'text/plain' ],
+    'rtf': [ 'text/rtf', 'application/rtf' ],
+    'pdf': [ 'application/pdf' ],
+    'ps': [ 'application/postscript' ],
+    'tei': [ 'application/tei+xml' ],
+    'tei+zip': [ 'application/zip', 'application/x-gzip', 'application/x-gtar', 'application/x-tar' ],
+    'snapshot': [ 'text/html' ],
+    'iso': [ 'application/octet-stream' ],
+    'svg': [ 'image/svg+xml' ],
+    'gedcom': [ 'application/octet-stream', 'text/xml' ],
+}
+
 MIME_TYPE_SCORE = {
-    'text/plain': 1,
-    'text': 1,
-    'txt': 1,
-    'application/vnd.ms-excel': 2,
-    'application/vnd.ms-excel.sheet.binary.macroenabled.12': 2,
-    'application/vnd.ms-excel.sheet.macroenabled.12': 2,
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 2,
-    'xls': 2,
+    'atom': 2,
+    'application/atom+xml': 2,
+    'snapshot': 1,
+    'iso': 1,
+    'application/octet-stream': 1,
+    'rss': 2,
+    'application/rss+xml': 2,
+    'ore': 3,
+    'csv': 3,
     'text/csv': 3,
+    'json': 3,
     'application/json': 3,
+    'json-ld': 4,
+    'owl+xml': 4,
+    'kml': 3,
+    'application/vnd.google-earth.kml+xml': 3,
+    'rdf+json': 4,
+    'n3': 4,
+    'text/n3': 4,
+    'n-triples': 4,
+    'turtle': 4,
+    'text/turtle': 4,
+    'rdf+xml': 4,
+    'application/rdf+xml': 4,
+    'svg': 3,
+    'text/svg+xml': 3,
+    'tsv': 3,
+    'text/tab-separated-values': 3,
+    'htm': 1,
+    'mei': 3,
+    'api': 2,
+    'api/rest': 3,
+    'api/sparql': 3,
+    'application/sparql-query': 3,
+    'html': 2,
     'application/xml': 3,
     'text/xml': 3,
-    'csv': 3,
-    'xml': 3,
-    'json': 3,
-    'application/rdf+xml': 4,
-    'rdf': 4
+    'text/html': 1,
+    'application/xhtml+xml': 1,
+    'text/plain': 1,
+    'text/rtf': 1,
+    'application/rtf': 1,
+    'txt': 1,
+    'application/pdf': 1,
+    'application/postscript': 1,
+    'pdf': 1,
+    'ps': 1,
+    'tei': 3,
+    'application/tei+xml': 3,
+    'tei+zip': 3,
+    'application/zip': 1,
+    'application/x-gzip': 1,
+    'application/x-gtar': 1,
+    'application/x-tar': 1,
+    'gedcom': 3,
 }
 
 
@@ -187,6 +251,7 @@ def resource_score(context, data):
     if json.loads(response.content)['success']:
         score_failure_count = int(json.loads(response.content)['result'].get('value', '0'))
 
+    log = update.get_logger()
     # no score for resources that don't have an open license
     if not data.get('is_open'):
         score_reason = 'License not open'
@@ -204,14 +269,19 @@ def resource_score(context, data):
             file_type = mimetypes.guess_type(data['url'])[0]
 
             # file type takes priority for scoring
+            score = -1
             if file_type:
                 score = MIME_TYPE_SCORE.get(file_type, -1)
-            elif ct:
-                score = MIME_TYPE_SCORE.get(ct, -1)
-            elif format:
-                score = MIME_TYPE_SCORE.get(format, -1)
+            if ct:
+                score = max(score, MIME_TYPE_SCORE.get(ct, -1))
+            if format:
+                # we want to make sure the linked resource is what format
+                # claims it is
+                type_list = ALLOWED_MIME_TYPES.get(format, [])
+                if len(type_list) == 0 or file_type in type_list:
+                    score = max(score, MIME_TYPE_SCORE.get(format, -1))
 
-            score_reason = OPENNESS_SCORE_REASON[score]
+            score_reason = OPENNESS_SCORE_REASON.get(score, "Unable to calculate openness score")
 
             # negative scores are only useful for getting the reason message,
             # set it back to 0 if it's still <0 at this point

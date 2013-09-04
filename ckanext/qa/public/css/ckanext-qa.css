@@ -26,9 +26,10 @@
   padding-top: 5px;
   text-align: right;
 }
-.search-result .no-stars {
+.no-stars {
   color: #aaa;
   font-size: 11px;
+  font-style: italic;
 }
 
 // New styles for QA

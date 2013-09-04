@@ -12,7 +12,7 @@ reason - A reason why the dataset doesn't have a rating.
   {%- if stars == 0 -%}
     {{ reason }}
   {%- else -%}
-    <span class="star-rating-stars">
+    <span class="star-rating-stars" href="#" data-toggle="tooltip" title="{{ reason }}">
       {%- for index in range(stars) -%}
         <img class="star" src="{% url_for_static '/images/star.png' %}" width="16" height="16" />
       {%- endfor -%}

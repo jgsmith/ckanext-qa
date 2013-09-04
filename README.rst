@@ -12,6 +12,7 @@ Once you have run the qa commands (see 'Using The QA Extension' below),
 resources and packages will have a set of openness key's stores in their
 extra properties. 
 
+**N.B.:** This fork of the QA extension has modifications specific to dhdata.org.
 
 Requirements
 ------------

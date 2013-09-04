@@ -10,6 +10,7 @@ Example:
     {% snippet "qa/snippets/stars_module.html", stars=3 %}
 
 #}
+{#
 <section class="module-ratings module module-narrow module-shallow">
   <h2 class="module-heading">{{ _('Resource Quality') }}</h2>
   <p class="module-content">
@@ -20,3 +21,5 @@ Example:
     {{ h.qa_stars_info(stars) }}
   </div>
 </section>
+#}
+{{ h.qa_stars_rating(stars, reason) }}
